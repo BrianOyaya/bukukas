@@ -1,0 +1,974 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Buku Kas Harian</title>
+<style>
+  :root{
+    --paper:#EFEAE0;
+    --paper-line:#DCD4C2;
+    --ink:#26344A;
+    --ink-soft:#5B6B84;
+    --gold:#B98A2E;
+    --green:#3C7A5B;
+    --green-bg:#E4EFE6;
+    --red:#A6483A;
+    --red-bg:#F3E3DF;
+    --card:#FBF9F4;
+    --shadow: rgba(38,52,74,0.12);
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --paper:#1B1B18;
+      --paper-line:#33322C;
+      --ink:#EDE7D8;
+      --ink-soft:#A8A190;
+      --gold:#D7A94A;
+      --green:#7BBE9B;
+      --green-bg:#213A2C;
+      --red:#D98D7F;
+      --red-bg:#3B2622;
+      --card:#242320;
+      --shadow: rgba(0,0,0,0.4);
+    }
+  }
+  :root[data-theme="dark"]{
+    --paper:#1B1B18;
+    --paper-line:#33322C;
+    --ink:#EDE7D8;
+    --ink-soft:#A8A190;
+    --gold:#D7A94A;
+    --green:#7BBE9B;
+    --green-bg:#213A2C;
+    --red:#D98D7F;
+    --red-bg:#3B2622;
+    --card:#242320;
+    --shadow: rgba(0,0,0,0.4);
+  }
+
+  *{box-sizing:border-box;}
+  html{scroll-padding-top:env(safe-area-inset-top,0px);}
+  body{
+    margin:0;
+    background:
+      repeating-linear-gradient(var(--paper) 0px, var(--paper) 31px, var(--paper-line) 32px),
+      var(--paper);
+    color:var(--ink);
+    font-family: Georgia, "Times New Roman", serif;
+    padding-top:env(safe-area-inset-top,0px);
+    padding-bottom:env(safe-area-inset-bottom,0px);
+    min-height:100vh;
+  }
+
+  .wrap{max-width:560px;margin:0 auto;padding:28px 18px 60px;}
+
+  header{margin-bottom:22px;}
+  header h1{font-size:1.7rem;font-weight:600;margin:0 0 4px;letter-spacing:0.2px;}
+  header p{margin:0;color:var(--ink-soft);font-size:0.92rem;font-style:italic;}
+
+  .card{
+    background:var(--card);
+    border:1px solid var(--paper-line);
+    border-radius:6px;
+    box-shadow: 0 2px 10px var(--shadow);
+    padding:20px;
+    margin-bottom:20px;
+  }
+  .card h2{font-size:1rem;margin:0 0 12px;font-weight:600;}
+
+  .balance-label{color:var(--ink-soft);font-size:0.85rem;margin-bottom:6px;}
+  .balance-amount{font-size:2.3rem;font-weight:700;font-variant-numeric: tabular-nums;line-height:1.1;}
+  .balance-amount.negative{color:var(--red);}
+  .sub-row{display:flex;gap:18px;margin-top:14px;padding-top:14px;border-top:1px dashed var(--paper-line);}
+  .sub-item{flex:1;}
+  .sub-item .lbl{font-size:0.78rem;color:var(--ink-soft);}
+  .sub-item .val{font-size:1.05rem;font-weight:600;font-variant-numeric:tabular-nums;}
+  .sub-item.in .val{color:var(--green);}
+  .sub-item.out .val{color:var(--red);}
+
+  .tally{
+    text-align:center;
+    font-size:2rem;
+    font-weight:700;
+    font-variant-numeric:tabular-nums;
+    padding:10px 0 16px;
+    border-bottom:1px dashed var(--paper-line);
+    margin-bottom:14px;
+  }
+  .coins{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px;}
+  .coin{
+    aspect-ratio:1;
+    border-radius:50%;
+    border:2px solid var(--gold);
+    background:transparent;
+    color:var(--gold);
+    font-weight:700;
+    font-size:0.72rem;
+    cursor:pointer;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    transition: transform .12s ease, background .12s ease, color .12s ease;
+  }
+  .coin:hover{background:var(--gold);color:var(--card);}
+  .coin:active{transform:scale(0.92);}
+
+  .clear-btn{
+    display:block;margin:0 auto 14px;background:none;border:none;
+    color:var(--ink-soft);text-decoration:underline;font-family:inherit;
+    font-size:0.85rem;cursor:pointer;padding:4px;
+  }
+
+  label.field-label{display:block;font-size:0.8rem;color:var(--ink-soft);margin-bottom:4px;}
+  input[type="number"], input[type="text"]{
+    width:100%;
+    padding:10px 12px;
+    border:1px solid var(--paper-line);
+    border-radius:5px;
+    background:var(--paper);
+    color:var(--ink);
+    font-family:inherit;
+    font-size:0.95rem;
+    margin-bottom:12px;
+  }
+  input::placeholder{color:var(--ink-soft);}
+
+  .actions{display:flex;gap:10px;}
+  .actions button{
+    flex:1;padding:12px;border-radius:5px;border:none;
+    font-family:inherit;font-weight:600;font-size:0.95rem;cursor:pointer;
+    transition:opacity .12s ease;
+  }
+  .actions button:active{opacity:0.8;}
+  .btn-in{background:var(--green);color:#fff;}
+  .btn-out{background:var(--red);color:#fff;}
+
+  .msg{
+    min-height:1.1rem;
+    font-size:0.82rem;
+    color:var(--red);
+    margin:-4px 0 10px;
+  }
+
+  .chart-wrap{overflow-x:auto;}
+  .chart-legend{display:flex;gap:16px;font-size:0.8rem;color:var(--ink-soft);margin-top:10px;}
+  .chart-legend span{display:inline-flex;align-items:center;gap:6px;}
+  .dot{width:9px;height:9px;border-radius:50%;display:inline-block;}
+  .dot.in{background:var(--green);}
+  .dot.out{background:var(--red);}
+
+  .row{
+    display:flex;align-items:flex-start;gap:12px;padding:12px 4px;
+    border-bottom:1px solid var(--paper-line);
+  }
+  .row:last-child{border-bottom:none;}
+  .row .mark{width:8px;height:8px;border-radius:50%;margin-top:8px;flex-shrink:0;}
+  .row.in .mark{background:var(--green);}
+  .row.out .mark{background:var(--red);}
+  .row .info{flex:1;min-width:0;}
+  .row .amt{font-weight:600;font-variant-numeric:tabular-nums;}
+  .row.in .amt{color:var(--green);}
+  .row.out .amt{color:var(--red);}
+  .row .note{color:var(--ink-soft);font-size:0.88rem;font-style:italic;margin-top:2px;word-break:break-word;}
+  .row .time{color:var(--ink-soft);font-size:0.75rem;margin-top:3px;}
+  .row .del{
+    background:none;border:none;color:var(--ink-soft);
+    font-size:1.2rem;line-height:1;cursor:pointer;padding:2px 6px;flex-shrink:0;
+  }
+  .row .del:hover{color:var(--red);}
+  section{opacity:1;}
+
+  .type-toggle{display:flex;gap:8px;margin-bottom:12px;}
+  .type-toggle button{
+    flex:1;
+    padding:9px;
+    border-radius:5px;
+    border:1px solid var(--paper-line);
+    background:var(--paper);
+    color:var(--ink-soft);
+    font-family:inherit;
+    font-weight:600;
+    font-size:0.88rem;
+    cursor:pointer;
+  }
+  .type-toggle button.active.piutang{background:var(--green-bg);border-color:var(--green);color:var(--green);}
+  .type-toggle button.active.hutang{background:var(--red-bg);border-color:var(--red);color:var(--red);}
+
+  .debt-summary{display:flex;gap:18px;margin-bottom:16px;padding-bottom:14px;border-bottom:1px dashed var(--paper-line);}
+  .debt-row{
+    display:flex;align-items:flex-start;gap:12px;padding:12px 4px;
+    border-bottom:1px solid var(--paper-line);
+  }
+  .debt-row:last-child{border-bottom:none;}
+  .debt-row .mark{width:8px;height:8px;border-radius:50%;margin-top:8px;flex-shrink:0;}
+  .debt-row.piutang .mark{background:var(--green);}
+  .debt-row.hutang .mark{background:var(--red);}
+  .debt-row .info{flex:1;min-width:0;}
+  .debt-row .person{font-weight:600;}
+  .debt-row .amt{font-weight:600;font-variant-numeric:tabular-nums;}
+  .debt-row.piutang .amt{color:var(--green);}
+  .debt-row.hutang .amt{color:var(--red);}
+  .debt-row .note{color:var(--ink-soft);font-size:0.88rem;font-style:italic;margin-top:2px;word-break:break-word;}
+  .debt-row .time{color:var(--ink-soft);font-size:0.75rem;margin-top:3px;}
+  .debt-row.paid .person, .debt-row.paid .amt{text-decoration:line-through;color:var(--ink-soft);}
+  .debt-row-actions{display:flex;flex-direction:column;gap:6px;align-items:flex-end;flex-shrink:0;}
+  .debt-row-actions button{
+    background:none;border:none;font-family:inherit;cursor:pointer;padding:2px 4px;
+  }
+  .btn-lunas{font-size:0.72rem;color:var(--ink-soft);text-decoration:underline;white-space:nowrap;}
+  .btn-lunas.is-paid{color:var(--green);}
+  .del{font-size:1.2rem;line-height:1;color:var(--ink-soft);}
+  .del:hover{color:var(--red);}
+  .empty{color:var(--ink-soft);font-style:italic;text-align:center;padding:16px 0;}
+
+  .account-badge{
+    display:flex;align-items:center;gap:8px;
+    font-size:0.78rem;color:var(--ink-soft);
+    background:var(--card);border:1px solid var(--paper-line);
+    border-radius:20px;padding:6px 12px;margin-top:10px;
+    width:fit-content;
+  }
+  .account-badge.cloud{color:var(--green);border-color:var(--green);}
+  .account-badge .dot2{width:7px;height:7px;border-radius:50%;background:var(--ink-soft);flex-shrink:0;}
+  .account-badge.cloud .dot2{background:var(--green);}
+  .account-note{font-size:0.75rem;color:var(--ink-soft);margin-top:6px;line-height:1.4;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Buku Kas Harian</h1>
+    <p>Catat pemasukan &amp; pengeluaran receh harianmu, lengkap dengan pesan.</p>
+    <div class="account-badge" id="accountBadge">
+      <span class="dot2"></span>
+      <span id="accountBadgeText">Memeriksa akun...</span>
+    </div>
+    <div class="account-note" id="accountNote"></div>
+  </header>
+
+  <section class="card">
+    <div class="balance-label">Total uang kamu sekarang</div>
+    <div class="balance-amount" id="balance">Rp0</div>
+    <div class="sub-row">
+      <div class="sub-item in">
+        <div class="lbl">Pemasukan</div>
+        <div class="val" id="totalIn">Rp0</div>
+      </div>
+      <div class="sub-item out">
+        <div class="lbl">Pengeluaran</div>
+        <div class="val" id="totalOut">Rp0</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Hitung nominal</h2>
+    <div class="tally" id="tally">Rp0</div>
+    <div class="coins" id="coinGrid"></div>
+    <button class="clear-btn" id="clearTally" type="button">Reset nominal</button>
+
+    <label class="field-label" for="customAmount">Atau ketik nominal sendiri (Rp)</label>
+    <input type="number" id="customAmount" placeholder="contoh: 1500" min="0" step="1" inputmode="numeric">
+
+    <label class="field-label" for="noteInput">Pesan / catatan (opsional)</label>
+    <input type="text" id="noteInput" placeholder="contoh: jajan pasar">
+
+    <div class="msg" id="formMsg"></div>
+
+    <div class="actions">
+      <button class="btn-in" id="addIn" type="button">+ Pemasukan</button>
+      <button class="btn-out" id="addOut" type="button">− Pengeluaran</button>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Utang &amp; Piutang</h2>
+    <div class="debt-summary">
+      <div class="sub-item in">
+        <div class="lbl">Piutang (orang berutang ke kamu)</div>
+        <div class="val" id="totalPiutang">Rp0</div>
+      </div>
+      <div class="sub-item out">
+        <div class="lbl">Hutang (kamu berutang ke orang)</div>
+        <div class="val" id="totalHutang">Rp0</div>
+      </div>
+    </div>
+
+    <div class="type-toggle">
+      <button type="button" class="active piutang" id="typePiutang" data-type="piutang">Orang berutang ke saya</button>
+      <button type="button" class="hutang" id="typeHutang" data-type="hutang">Saya berutang ke orang</button>
+    </div>
+
+    <label class="field-label" for="debtPerson">Nama orang</label>
+    <input type="text" id="debtPerson" placeholder="contoh: Budi">
+
+    <label class="field-label" for="debtAmount">Nominal (Rp)</label>
+    <input type="number" id="debtAmount" placeholder="contoh: 50000" min="0" step="1" inputmode="numeric">
+
+    <label class="field-label" for="debtNote">Catatan (opsional)</label>
+    <input type="text" id="debtNote" placeholder="contoh: pinjam buat beli bensin">
+
+    <div class="msg" id="debtMsg"></div>
+
+    <div class="actions">
+      <button class="btn-in" id="addDebt" type="button">+ Catat</button>
+    </div>
+
+    <div id="debtList" style="margin-top:6px;"></div>
+  </section>
+
+  <section class="card">
+    <h2>Grafik per hari</h2>
+    <div class="chart-wrap"><div id="chart"></div></div>
+    <div class="chart-legend">
+      <span><i class="dot in"></i>Pemasukan</span>
+      <span><i class="dot out"></i>Pengeluaran</span>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Riwayat</h2>
+    <div id="list"></div>
+  </section>
+</div>
+
+<script>
+(function(){
+  'use strict';
+
+  var DENOMS = [1000,2000,5000,10000,20000,50000,100000];
+  var STORAGE_KEY = 'buku-kas-harian:entries:v2';
+  var DEBT_KEY = 'buku-kas-harian:debts:v1';
+  var MIGRATION_KEY = 'buku-kas-harian:migrated-x1000-v1';
+  var entries = [];
+  var debts = [];
+  var debtType = 'piutang';
+  var tally = 0;
+  var storageOK = true;
+
+  var mode = 'local'; // 'local' or 'cloud'
+  var cloudDb = null;
+  var cloudUid = null;
+  var cloudDocRef = null;
+  var lastAccountName = null;
+
+  function loadEntries(){
+    try{
+      var raw = window.localStorage.getItem(STORAGE_KEY);
+      entries = raw ? JSON.parse(raw) : [];
+      if (!Array.isArray(entries)) entries = [];
+    }catch(e){
+      entries = [];
+      storageOK = false;
+    }
+  }
+
+  function saveEntries(){
+    persist();
+  }
+
+  function loadDebts(){
+    try{
+      var raw = window.localStorage.getItem(DEBT_KEY);
+      debts = raw ? JSON.parse(raw) : [];
+      if (!Array.isArray(debts)) debts = [];
+    }catch(e){
+      debts = [];
+      storageOK = false;
+    }
+  }
+
+  function saveDebts(){
+    persist();
+  }
+
+  var pendingCloudSync = false;
+
+  // Selalu simpan ke penyimpanan lokal HP dulu (biar tetap jalan walau
+  // offline / sinyal jelek), lalu kalau lagi online & sedang login,
+  // dorong juga ke akun (cloud). Kalau lagi offline, perubahan cukup
+  // aman di local storage dan otomatis dikirim ke akun begitu online lagi.
+  function persist(){
+    try{
+      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(entries));
+      window.localStorage.setItem(DEBT_KEY, JSON.stringify(debts));
+    }catch(e){
+      storageOK = false;
+    }
+
+    if (mode === 'cloud' && cloudDocRef){
+      if (navigator.onLine === false){
+        pendingCloudSync = true;
+        updateConnectionBadge();
+        return;
+      }
+      cloudDocRef.set({ entries: entries, debts: debts, updatedAt: Date.now() })
+        .then(function(){ pendingCloudSync = false; updateConnectionBadge(); })
+        .catch(function(){
+          // gagal kirim (mis. koneksi putus di tengah jalan) -> coba lagi nanti,
+          // data tetap aman karena sudah tersimpan lokal di atas
+          pendingCloudSync = true;
+          updateConnectionBadge();
+        });
+    }
+  }
+
+  // Kalau ada perubahan yang belum sempat terkirim ke akun (dibuat waktu
+  // offline), kirim begitu koneksi kembali.
+  function syncPendingToCloud(){
+    if (mode !== 'cloud' || !cloudDocRef || !pendingCloudSync) return;
+    cloudDocRef.set({ entries: entries, debts: debts, updatedAt: Date.now() })
+      .then(function(){ pendingCloudSync = false; updateConnectionBadge(); })
+      .catch(function(){ /* coba lagi lain kali */ });
+  }
+
+  function updateConnectionBadge(){
+    if (mode !== 'cloud'){
+      setAccountBadge('Mode lokal (data hanya di HP ini)', false);
+      return;
+    }
+    if (navigator.onLine === false){
+      setAccountBadge('Offline \u2014 perubahan disimpan di HP ini', false);
+    } else if (pendingCloudSync){
+      setAccountBadge('Menyinkronkan ke akun\u2026', true);
+    } else {
+      setAccountBadge('Tersimpan ke akun \u2014 ' + (lastAccountName || 'kamu'), true);
+    }
+  }
+
+  function setAccountBadge(text, isCloud){
+    var badge = document.getElementById('accountBadge');
+    var txt = document.getElementById('accountBadgeText');
+    if (!badge || !txt) return;
+    txt.textContent = text;
+    badge.classList.toggle('cloud', !!isCloud);
+  }
+
+  function setAccountNote(text){
+    var note = document.getElementById('accountNote');
+    if (note) note.textContent = text || '';
+  }
+
+  // Coba nyalakan mode akun (data tersimpan online, ikut ke HP lain saat
+  // kamu buka link ini dan login dengan akun Claude yang sama). Kalau
+  // tidak tersedia (mis. dibuka sebagai file biasa, atau belum login),
+  // aplikasi tetap jalan normal pakai penyimpanan lokal di HP ini.
+  function initAccount(){
+    if (!window.claude || typeof window.claude.use !== 'function'){
+      setAccountBadge('Mode lokal (data hanya di HP ini)', false);
+      return;
+    }
+    Promise.all([window.claude.use('user'), window.claude.use('db')])
+      .then(function(results){
+        var user = results[0], db = results[1];
+        if (!user || !db){
+          setAccountBadge('Mode lokal (data hanya di HP ini)', false);
+          return;
+        }
+        return user.id().then(function(uid){
+          if (!uid){
+            setAccountBadge('Mode lokal (data hanya di HP ini)', false);
+            return;
+          }
+          cloudDb = db;
+          cloudUid = uid;
+          cloudDocRef = db.doc('data/users/' + uid + '/kas');
+          mode = 'cloud';
+
+          return user.me().then(function(profile){
+            lastAccountName = (profile && profile.name) || 'kamu';
+            updateConnectionBadge();
+            setAccountNote('Data ini otomatis muncul lagi kalau kamu buka halaman ini di HP lain dan login dengan akun yang sama. Kalau lagi offline, catatan tetap tersimpan di HP ini dan otomatis dikirim ke akun begitu online lagi.');
+
+            return cloudDocRef.get().then(function(snap){
+              if (snap.exists){
+                var data = snap.data() || {};
+                entries = Array.isArray(data.entries) ? data.entries : [];
+                debts = Array.isArray(data.debts) ? data.debts : [];
+              } else if (entries.length || debts.length){
+                // ada data lokal lama di HP ini -> pindahkan ke akun sekali ini
+                return cloudDocRef.set({ entries: entries, debts: debts, updatedAt: Date.now() });
+              } else {
+                return cloudDocRef.set({ entries: [], debts: [], updatedAt: Date.now() });
+              }
+            }).then(function(){
+              renderTally();
+              renderAll();
+              renderDebts();
+
+              // dengarkan perubahan langsung (kalau diedit dari HP lain)
+              cloudDocRef.onSnapshot(function(snap2){
+                if (!snap2.exists) return;
+                var data2 = snap2.data() || {};
+                entries = Array.isArray(data2.entries) ? data2.entries : [];
+                debts = Array.isArray(data2.debts) ? data2.debts : [];
+                renderAll();
+                renderDebts();
+              }, function(){ /* abaikan error langganan, coba lagi lain kali */ });
+            });
+          });
+        });
+      })
+      .catch(function(){
+        setAccountBadge('Mode lokal (data hanya di HP ini)', false);
+      });
+  }
+
+  function migrateToThousandsIfNeeded(){
+    var already = false;
+    try{
+      already = window.localStorage.getItem(MIGRATION_KEY) === '1';
+    }catch(e){
+      already = false;
+    }
+    if (already) return;
+
+    var changed = false;
+    entries.forEach(function(e){
+      if (typeof e.amount === 'number'){ e.amount = e.amount * 1000; changed = true; }
+    });
+    debts.forEach(function(d){
+      if (typeof d.amount === 'number'){ d.amount = d.amount * 1000; changed = true; }
+    });
+
+    if (changed){
+      saveEntries();
+      saveDebts();
+    }
+    try{
+      window.localStorage.setItem(MIGRATION_KEY, '1');
+    }catch(e){ /* ignore */ }
+  }
+
+  function formatRp(n){
+    var sign = n < 0 ? '-' : '';
+    return sign + 'Rp' + Math.abs(Math.round(n)).toLocaleString('id-ID');
+  }
+
+  function formatCoinLabel(n){
+    if (n >= 1000) return (n / 1000).toLocaleString('id-ID') + 'rb';
+    return String(n);
+  }
+
+  function showMsg(text){
+    var el = document.getElementById('formMsg');
+    el.textContent = text || '';
+  }
+
+  function showDebtMsg(text){
+    var el = document.getElementById('debtMsg');
+    el.textContent = text || '';
+  }
+
+  function renderTally(){
+    document.getElementById('tally').textContent = formatRp(tally);
+  }
+
+  function currentAmount(){
+    var customEl = document.getElementById('customAmount');
+    var customVal = customEl.value.trim();
+    if (customVal !== ''){
+      var n = parseFloat(customVal);
+      if (!isNaN(n) && n > 0) return n;
+      return 0;
+    }
+    return tally;
+  }
+
+  function addEntry(type){
+    var amount = currentAmount();
+    if (!amount || amount <= 0){
+      showMsg('Masukkan nominal dulu — klik koin atau ketik angka sebelum menyimpan.');
+      return;
+    }
+    var noteEl = document.getElementById('noteInput');
+    var note = noteEl.value.trim();
+    var now = new Date();
+
+    entries.unshift({
+      id: now.getTime() + '-' + Math.random().toString(36).slice(2,7),
+      type: type,
+      amount: amount,
+      note: note,
+      dateISO: now.toISOString().slice(0,10),
+      timeDisplay: now.toLocaleString('id-ID', {day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})
+    });
+
+    saveEntries();
+
+    tally = 0;
+    document.getElementById('customAmount').value = '';
+    noteEl.value = '';
+    showMsg(storageOK ? '' : 'Tersimpan untuk sesi ini (penyimpanan browser tidak tersedia, jadi tidak bertahan setelah ditutup).');
+
+    renderTally();
+    renderAll();
+  }
+
+  function deleteEntry(id){
+    entries = entries.filter(function(e){ return e.id !== id; });
+    saveEntries();
+    renderAll();
+  }
+
+  function addDebt(){
+    var personEl = document.getElementById('debtPerson');
+    var amountEl = document.getElementById('debtAmount');
+    var noteEl = document.getElementById('debtNote');
+
+    var person = personEl.value.trim();
+    var amount = parseFloat(amountEl.value);
+
+    if (!person){
+      showDebtMsg('Isi nama orangnya dulu.');
+      return;
+    }
+    if (!amount || amount <= 0){
+      showDebtMsg('Isi nominal utang/piutangnya dulu.');
+      return;
+    }
+
+    var now = new Date();
+    debts.unshift({
+      id: now.getTime() + '-' + Math.random().toString(36).slice(2,7),
+      type: debtType,
+      person: person,
+      amount: amount,
+      note: noteEl.value.trim(),
+      dateISO: now.toISOString().slice(0,10),
+      timeDisplay: now.toLocaleString('id-ID', {day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}),
+      paid: false
+    });
+
+    saveDebts();
+
+    personEl.value = '';
+    amountEl.value = '';
+    noteEl.value = '';
+    showDebtMsg('');
+    renderDebts();
+  }
+
+  function toggleDebtPaid(id){
+    var d = debts.find(function(x){ return x.id === id; });
+    if (d) d.paid = !d.paid;
+    saveDebts();
+    renderDebts();
+  }
+
+  function deleteDebt(id){
+    debts = debts.filter(function(d){ return d.id !== id; });
+    saveDebts();
+    renderDebts();
+  }
+
+  function renderDebts(){
+    var totalPiutang = 0, totalHutang = 0;
+    debts.forEach(function(d){
+      if (d.paid) return;
+      if (d.type === 'piutang') totalPiutang += d.amount; else totalHutang += d.amount;
+    });
+    document.getElementById('totalPiutang').textContent = formatRp(totalPiutang);
+    document.getElementById('totalHutang').textContent = formatRp(totalHutang);
+
+    var list = document.getElementById('debtList');
+    list.innerHTML = '';
+
+    if (debts.length === 0){
+      var empty = document.createElement('div');
+      empty.className = 'empty';
+      empty.textContent = 'Belum ada catatan utang/piutang.';
+      list.appendChild(empty);
+      return;
+    }
+
+    debts.forEach(function(d){
+      var row = document.createElement('div');
+      row.className = 'debt-row ' + d.type + (d.paid ? ' paid' : '');
+
+      var mark = document.createElement('div');
+      mark.className = 'mark';
+
+      var info = document.createElement('div');
+      info.className = 'info';
+
+      var person = document.createElement('div');
+      person.className = 'person';
+      person.textContent = d.person;
+      info.appendChild(person);
+
+      var amt = document.createElement('div');
+      amt.className = 'amt';
+      amt.textContent = (d.type === 'piutang' ? '+ ' : '\u2212 ') + formatRp(d.amount) +
+        (d.type === 'piutang' ? ' (berutang ke kamu)' : ' (kamu berutang)');
+      info.appendChild(amt);
+
+      if (d.note){
+        var note = document.createElement('div');
+        note.className = 'note';
+        note.textContent = '"' + d.note + '"';
+        info.appendChild(note);
+      }
+
+      var time = document.createElement('div');
+      time.className = 'time';
+      time.textContent = d.timeDisplay || '';
+      info.appendChild(time);
+
+      var actions = document.createElement('div');
+      actions.className = 'debt-row-actions';
+
+      var lunasBtn = document.createElement('button');
+      lunasBtn.type = 'button';
+      lunasBtn.className = 'btn-lunas' + (d.paid ? ' is-paid' : '');
+      lunasBtn.textContent = d.paid ? 'Lunas \u2713' : 'Tandai lunas';
+      lunasBtn.addEventListener('click', function(){ toggleDebtPaid(d.id); });
+
+      var del = document.createElement('button');
+      del.className = 'del';
+      del.type = 'button';
+      del.setAttribute('aria-label', 'Hapus catatan');
+      del.textContent = '\u00d7';
+      del.addEventListener('click', function(){ deleteDebt(d.id); });
+
+      actions.appendChild(lunasBtn);
+      actions.appendChild(del);
+
+      row.appendChild(mark);
+      row.appendChild(info);
+      row.appendChild(actions);
+      list.appendChild(row);
+    });
+  }
+
+  function renderSummary(){
+    var inTotal = 0, outTotal = 0;
+    entries.forEach(function(e){
+      if (e.type === 'in') inTotal += e.amount; else outTotal += e.amount;
+    });
+    var balance = inTotal - outTotal;
+    var balEl = document.getElementById('balance');
+    balEl.textContent = formatRp(balance);
+    balEl.classList.toggle('negative', balance < 0);
+    document.getElementById('totalIn').textContent = formatRp(inTotal);
+    document.getElementById('totalOut').textContent = formatRp(outTotal);
+  }
+
+  function renderList(){
+    var list = document.getElementById('list');
+    list.innerHTML = '';
+    if (entries.length === 0){
+      var empty = document.createElement('div');
+      empty.className = 'empty';
+      empty.textContent = 'Belum ada catatan. Mulai hitung nominal di atas.';
+      list.appendChild(empty);
+      return;
+    }
+    entries.forEach(function(e){
+      var row = document.createElement('div');
+      row.className = 'row ' + e.type;
+
+      var mark = document.createElement('div');
+      mark.className = 'mark';
+
+      var info = document.createElement('div');
+      info.className = 'info';
+
+      var amt = document.createElement('div');
+      amt.className = 'amt';
+      amt.textContent = (e.type === 'in' ? '+ ' : '\u2212 ') + formatRp(e.amount);
+      info.appendChild(amt);
+
+      if (e.note){
+        var note = document.createElement('div');
+        note.className = 'note';
+        note.textContent = '"' + e.note + '"';
+        info.appendChild(note);
+      }
+
+      var time = document.createElement('div');
+      time.className = 'time';
+      time.textContent = e.timeDisplay || '';
+      info.appendChild(time);
+
+      var del = document.createElement('button');
+      del.className = 'del';
+      del.type = 'button';
+      del.setAttribute('aria-label', 'Hapus catatan');
+      del.textContent = '\u00d7';
+      del.addEventListener('click', function(){ deleteEntry(e.id); });
+
+      row.appendChild(mark);
+      row.appendChild(info);
+      row.appendChild(del);
+      list.appendChild(row);
+    });
+  }
+
+  function dayLabel(iso){
+    var d = new Date(iso + 'T00:00:00');
+    return d.toLocaleDateString('id-ID', {day:'numeric', month:'short'});
+  }
+
+  function renderChart(){
+    var chart = document.getElementById('chart');
+    chart.innerHTML = '';
+
+    if (entries.length === 0){
+      var empty = document.createElement('div');
+      empty.className = 'empty';
+      empty.textContent = 'Grafik akan muncul setelah ada catatan.';
+      chart.appendChild(empty);
+      return;
+    }
+
+    var byDay = {};
+    entries.forEach(function(e){
+      if (!byDay[e.dateISO]) byDay[e.dateISO] = {in:0, out:0};
+      byDay[e.dateISO][e.type] += e.amount;
+    });
+
+    var days = Object.keys(byDay).sort();
+    days = days.slice(-14);
+
+    var maxVal = 1;
+    days.forEach(function(d){
+      maxVal = Math.max(maxVal, byDay[d].in, byDay[d].out);
+    });
+
+    var barW = 22;
+    var gap = 18;
+    var groupW = barW * 2 + 6;
+    var colW = groupW + gap;
+    var halfH = 90;
+    var svgW = Math.max(days.length * colW + gap, 280);
+    var svgH = halfH * 2 + 40;
+
+    var svgNS = 'http://www.w3.org/2000/svg';
+    var svg = document.createElementNS(svgNS, 'svg');
+    svg.setAttribute('viewBox', '0 0 ' + svgW + ' ' + svgH);
+    svg.setAttribute('width', svgW);
+    svg.setAttribute('height', svgH);
+
+    var axis = document.createElementNS(svgNS, 'line');
+    axis.setAttribute('x1', 0);
+    axis.setAttribute('x2', svgW);
+    axis.setAttribute('y1', halfH);
+    axis.setAttribute('y2', halfH);
+    axis.setAttribute('stroke', 'var(--paper-line)');
+    axis.setAttribute('stroke-width', '1');
+    svg.appendChild(axis);
+
+    days.forEach(function(d, i){
+      var x0 = gap + i * colW;
+      var inVal = byDay[d].in;
+      var outVal = byDay[d].out;
+
+      var inH = (inVal / maxVal) * (halfH - 10);
+      var outH = (outVal / maxVal) * (halfH - 10);
+
+      var inRect = document.createElementNS(svgNS, 'rect');
+      inRect.setAttribute('x', x0);
+      inRect.setAttribute('y', halfH - inH);
+      inRect.setAttribute('width', barW);
+      inRect.setAttribute('height', inH);
+      inRect.setAttribute('rx', 2);
+      inRect.setAttribute('fill', 'var(--green)');
+      svg.appendChild(inRect);
+
+      var outRect = document.createElementNS(svgNS, 'rect');
+      outRect.setAttribute('x', x0 + barW + 6);
+      outRect.setAttribute('y', halfH);
+      outRect.setAttribute('width', barW);
+      outRect.setAttribute('height', outH);
+      outRect.setAttribute('rx', 2);
+      outRect.setAttribute('fill', 'var(--red)');
+      svg.appendChild(outRect);
+
+      var label = document.createElementNS(svgNS, 'text');
+      label.setAttribute('x', x0 + barW + 3);
+      label.setAttribute('y', halfH * 2 + 22);
+      label.setAttribute('text-anchor', 'middle');
+      label.setAttribute('font-size', '10');
+      label.setAttribute('fill', 'var(--ink-soft)');
+      label.textContent = dayLabel(d);
+      svg.appendChild(label);
+    });
+
+    chart.appendChild(svg);
+  }
+
+  function renderAll(){
+    renderSummary();
+    renderList();
+    renderChart();
+  }
+
+  function init(){
+    var coinGrid = document.getElementById('coinGrid');
+    DENOMS.forEach(function(d){
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'coin';
+      b.textContent = formatCoinLabel(d);
+      b.addEventListener('click', function(){
+        tally += d;
+        showMsg('');
+        renderTally();
+      });
+      coinGrid.appendChild(b);
+    });
+
+    document.getElementById('clearTally').addEventListener('click', function(){
+      tally = 0;
+      document.getElementById('customAmount').value = '';
+      renderTally();
+    });
+
+    document.getElementById('addIn').addEventListener('click', function(){ addEntry('in'); });
+    document.getElementById('addOut').addEventListener('click', function(){ addEntry('out'); });
+
+    document.getElementById('customAmount').addEventListener('input', function(){ showMsg(''); });
+
+    var typePiutangBtn = document.getElementById('typePiutang');
+    var typeHutangBtn = document.getElementById('typeHutang');
+    typePiutangBtn.addEventListener('click', function(){
+      debtType = 'piutang';
+      typePiutangBtn.classList.add('active');
+      typeHutangBtn.classList.remove('active');
+    });
+    typeHutangBtn.addEventListener('click', function(){
+      debtType = 'hutang';
+      typeHutangBtn.classList.add('active');
+      typePiutangBtn.classList.remove('active');
+    });
+
+    document.getElementById('addDebt').addEventListener('click', addDebt);
+
+    loadEntries();
+    loadDebts();
+    migrateToThousandsIfNeeded();
+    renderTally();
+    renderAll();
+    renderDebts();
+    initAccount();
+
+    window.addEventListener('online', function(){
+      updateConnectionBadge();
+      syncPendingToCloud();
+    });
+    window.addEventListener('offline', function(){
+      updateConnectionBadge();
+    });
+  }
+
+  if (document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+})();
+</script>
+</body>
+</html>
