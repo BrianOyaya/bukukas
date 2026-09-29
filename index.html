@@ -1,0 +1,788 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Buku Kas Harian</title>
+<style>
+  :root{
+    --paper:#EFEAE0;
+    --paper-line:#DCD4C2;
+    --ink:#26344A;
+    --ink-soft:#5B6B84;
+    --gold:#B98A2E;
+    --green:#3C7A5B;
+    --green-bg:#E4EFE6;
+    --red:#A6483A;
+    --red-bg:#F3E3DF;
+    --card:#FBF9F4;
+    --shadow: rgba(38,52,74,0.12);
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --paper:#1B1B18;
+      --paper-line:#33322C;
+      --ink:#EDE7D8;
+      --ink-soft:#A8A190;
+      --gold:#D7A94A;
+      --green:#7BBE9B;
+      --green-bg:#213A2C;
+      --red:#D98D7F;
+      --red-bg:#3B2622;
+      --card:#242320;
+      --shadow: rgba(0,0,0,0.4);
+    }
+  }
+  :root[data-theme="dark"]{
+    --paper:#1B1B18;
+    --paper-line:#33322C;
+    --ink:#EDE7D8;
+    --ink-soft:#A8A190;
+    --gold:#D7A94A;
+    --green:#7BBE9B;
+    --green-bg:#213A2C;
+    --red:#D98D7F;
+    --red-bg:#3B2622;
+    --card:#242320;
+    --shadow: rgba(0,0,0,0.4);
+  }
+
+  *{box-sizing:border-box;}
+  html{scroll-padding-top:env(safe-area-inset-top,0px);}
+  body{
+    margin:0;
+    background:
+      repeating-linear-gradient(var(--paper) 0px, var(--paper) 31px, var(--paper-line) 32px),
+      var(--paper);
+    color:var(--ink);
+    font-family: Georgia, "Times New Roman", serif;
+    padding-top:env(safe-area-inset-top,0px);
+    padding-bottom:env(safe-area-inset-bottom,0px);
+    min-height:100vh;
+  }
+
+  .wrap{max-width:560px;margin:0 auto;padding:28px 18px 60px;}
+
+  header{margin-bottom:22px;}
+  header h1{font-size:1.7rem;font-weight:600;margin:0 0 4px;letter-spacing:0.2px;}
+  header p{margin:0;color:var(--ink-soft);font-size:0.92rem;font-style:italic;}
+
+  .card{
+    background:var(--card);
+    border:1px solid var(--paper-line);
+    border-radius:6px;
+    box-shadow: 0 2px 10px var(--shadow);
+    padding:20px;
+    margin-bottom:20px;
+  }
+  .card h2{font-size:1rem;margin:0 0 12px;font-weight:600;}
+
+  .balance-label{color:var(--ink-soft);font-size:0.85rem;margin-bottom:6px;}
+  .balance-amount{font-size:2.3rem;font-weight:700;font-variant-numeric: tabular-nums;line-height:1.1;}
+  .balance-amount.negative{color:var(--red);}
+  .sub-row{display:flex;gap:18px;margin-top:14px;padding-top:14px;border-top:1px dashed var(--paper-line);}
+  .sub-item{flex:1;}
+  .sub-item .lbl{font-size:0.78rem;color:var(--ink-soft);}
+  .sub-item .val{font-size:1.05rem;font-weight:600;font-variant-numeric:tabular-nums;}
+  .sub-item.in .val{color:var(--green);}
+  .sub-item.out .val{color:var(--red);}
+
+  .tally{
+    text-align:center;
+    font-size:2rem;
+    font-weight:700;
+    font-variant-numeric:tabular-nums;
+    padding:10px 0 16px;
+    border-bottom:1px dashed var(--paper-line);
+    margin-bottom:14px;
+  }
+  .coins{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px;}
+  .coin{
+    aspect-ratio:1;
+    border-radius:50%;
+    border:2px solid var(--gold);
+    background:transparent;
+    color:var(--gold);
+    font-weight:700;
+    font-size:0.85rem;
+    cursor:pointer;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    transition: transform .12s ease, background .12s ease, color .12s ease;
+  }
+  .coin:hover{background:var(--gold);color:var(--card);}
+  .coin:active{transform:scale(0.92);}
+
+  .clear-btn{
+    display:block;margin:0 auto 14px;background:none;border:none;
+    color:var(--ink-soft);text-decoration:underline;font-family:inherit;
+    font-size:0.85rem;cursor:pointer;padding:4px;
+  }
+
+  label.field-label{display:block;font-size:0.8rem;color:var(--ink-soft);margin-bottom:4px;}
+  input[type="number"], input[type="text"]{
+    width:100%;
+    padding:10px 12px;
+    border:1px solid var(--paper-line);
+    border-radius:5px;
+    background:var(--paper);
+    color:var(--ink);
+    font-family:inherit;
+    font-size:0.95rem;
+    margin-bottom:12px;
+  }
+  input::placeholder{color:var(--ink-soft);}
+
+  .actions{display:flex;gap:10px;}
+  .actions button{
+    flex:1;padding:12px;border-radius:5px;border:none;
+    font-family:inherit;font-weight:600;font-size:0.95rem;cursor:pointer;
+    transition:opacity .12s ease;
+  }
+  .actions button:active{opacity:0.8;}
+  .btn-in{background:var(--green);color:#fff;}
+  .btn-out{background:var(--red);color:#fff;}
+
+  .msg{
+    min-height:1.1rem;
+    font-size:0.82rem;
+    color:var(--red);
+    margin:-4px 0 10px;
+  }
+
+  .chart-wrap{overflow-x:auto;}
+  .chart-legend{display:flex;gap:16px;font-size:0.8rem;color:var(--ink-soft);margin-top:10px;}
+  .chart-legend span{display:inline-flex;align-items:center;gap:6px;}
+  .dot{width:9px;height:9px;border-radius:50%;display:inline-block;}
+  .dot.in{background:var(--green);}
+  .dot.out{background:var(--red);}
+
+  .row{
+    display:flex;align-items:flex-start;gap:12px;padding:12px 4px;
+    border-bottom:1px solid var(--paper-line);
+  }
+  .row:last-child{border-bottom:none;}
+  .row .mark{width:8px;height:8px;border-radius:50%;margin-top:8px;flex-shrink:0;}
+  .row.in .mark{background:var(--green);}
+  .row.out .mark{background:var(--red);}
+  .row .info{flex:1;min-width:0;}
+  .row .amt{font-weight:600;font-variant-numeric:tabular-nums;}
+  .row.in .amt{color:var(--green);}
+  .row.out .amt{color:var(--red);}
+  .row .note{color:var(--ink-soft);font-size:0.88rem;font-style:italic;margin-top:2px;word-break:break-word;}
+  .row .time{color:var(--ink-soft);font-size:0.75rem;margin-top:3px;}
+  .row .del{
+    background:none;border:none;color:var(--ink-soft);
+    font-size:1.2rem;line-height:1;cursor:pointer;padding:2px 6px;flex-shrink:0;
+  }
+  .row .del:hover{color:var(--red);}
+  .empty{color:var(--ink-soft);font-style:italic;text-align:center;padding:16px 0;}
+
+  .hamburger{position:fixed;top:calc(env(safe-area-inset-top,0px) + 16px);left:16px;z-index:40;width:40px;height:40px;border-radius:6px;border:1px solid var(--paper-line);background:var(--card);box-shadow:0 2px 8px var(--shadow);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;padding:0;}
+  .hamburger span{display:block;width:18px;height:2px;background:var(--ink);border-radius:1px;}
+  .drawer-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.35);z-index:45;opacity:0;transition:opacity .2s;}
+  .drawer-overlay.show{opacity:1;}
+  .drawer-overlay.hidden{display:none;}
+  .drawer{position:fixed;top:0;bottom:0;left:0;width:76%;max-width:280px;background:var(--card);z-index:50;box-shadow:2px 0 16px var(--shadow);transform:translateX(-105%);transition:transform .22s ease;padding:calc(env(safe-area-inset-top,0px) + 22px) 14px 20px;display:flex;flex-direction:column;gap:4px;border-right:1px solid var(--paper-line);}
+  .drawer.open{transform:translateX(0);}
+  .drawer-title{font-size:0.75rem;text-transform:uppercase;letter-spacing:0.06em;color:var(--ink-soft);margin:0 8px 12px;font-family:Georgia,serif;}
+  .drawer-item{display:flex;align-items:center;gap:12px;text-align:left;border:none;background:none;padding:12px 10px;border-radius:5px;font-size:1rem;font-family:inherit;font-weight:600;color:var(--ink);cursor:pointer;}
+  .drawer-item .di-ic{font-size:1.15rem;width:22px;text-align:center;color:var(--gold);}
+  .drawer-item.on{background:var(--paper);color:var(--gold);}
+  .view{display:none;}
+  .view.show{display:block;}
+  header{margin-left:50px;}
+
+  .note{padding:12px;border:1px solid var(--paper-line);border-left:3px solid var(--gold);border-radius:5px;margin-bottom:10px;background:var(--paper);}
+  .note .t{white-space:pre-wrap;word-break:break-word;font-style:italic;}
+  .note .m{display:flex;justify-content:space-between;align-items:center;margin-top:6px;font-size:0.75rem;color:var(--ink-soft);font-style:normal;}
+  .note .m button{background:none;border:none;color:var(--red);font-family:inherit;font-size:0.8rem;padding:2px 4px;cursor:pointer;}
+  textarea.note-input{width:100%;min-height:84px;padding:10px 12px;border:1px solid var(--paper-line);border-radius:5px;background:var(--paper);color:var(--ink);font-family:inherit;font-size:0.95rem;margin-bottom:12px;resize:vertical;}
+  .btn-note{width:100%;padding:12px;border:none;border-radius:5px;background:var(--gold);color:#fff;font-family:inherit;font-weight:600;font-size:0.95rem;cursor:pointer;}
+  .btn-note:active{opacity:0.8;}
+
+  .calc-screen{background:var(--ink);color:var(--card);border-radius:6px;padding:12px 14px;text-align:right;margin-bottom:12px;min-height:74px;}
+  .calc-expr{font-size:0.85rem;color:var(--gold);min-height:1.2rem;word-break:break-all;font-family:Georgia,serif;}
+  .calc-res{font-size:2rem;font-weight:700;word-break:break-all;font-variant-numeric:tabular-nums;}
+  .calc-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;}
+  .calc-grid button{padding:16px 0;border:none;border-radius:5px;font-family:inherit;font-size:1.1rem;font-weight:600;cursor:pointer;background:var(--paper);color:var(--ink);border:1px solid var(--paper-line);}
+  .calc-grid button.op{background:var(--gold);color:#fff;border:none;}
+  .calc-grid button.fn{background:var(--paper-line);}
+  .calc-grid button.eq{background:var(--ink);color:var(--card);border:none;}
+  .calc-grid button:active{opacity:0.75;}
+</style>
+</head>
+<body>
+<button type="button" id="hamBtn" class="hamburger" aria-label="Menu">
+  <span></span><span></span><span></span>
+</button>
+<div id="drawerOverlay" class="drawer-overlay hidden"></div>
+<nav id="drawer" class="drawer">
+  <div class="drawer-title">Menu</div>
+  <button type="button" class="drawer-item on" data-view="home"><span class="di-ic">&#8962;</span> Beranda</button>
+  <button type="button" class="drawer-item" data-view="calc"><span class="di-ic">&#8759;</span> Kalkulator</button>
+  <button type="button" class="drawer-item" data-view="notes"><span class="di-ic">&#9998;</span> Catatan</button>
+</nav>
+<div class="wrap">
+<div id="viewHome" class="view show">
+  <header>
+    <h1>Buku Kas Harian</h1>
+    <p>Catat pemasukan &amp; pengeluaran receh harianmu, lengkap dengan pesan.</p>
+  </header>
+
+  <section class="card">
+    <div class="balance-label">Saldo saat ini</div>
+    <div class="balance-amount" id="balance">Rp0</div>
+    <div class="sub-row">
+      <div class="sub-item in">
+        <div class="lbl">Pemasukan</div>
+        <div class="val" id="totalIn">Rp0</div>
+      </div>
+      <div class="sub-item out">
+        <div class="lbl">Pengeluaran</div>
+        <div class="val" id="totalOut">Rp0</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Hitung nominal</h2>
+    <div class="tally" id="tally">Rp0</div>
+    <div class="coins" id="coinGrid"></div>
+    <button class="clear-btn" id="clearTally" type="button">Reset nominal</button>
+
+    <label class="field-label" for="customAmount">Atau ketik nominal sendiri (Rp)</label>
+    <input type="number" id="customAmount" placeholder="contoh: 1500" min="0" step="1" inputmode="numeric">
+
+    <label class="field-label" for="noteInput">Pesan / catatan (opsional)</label>
+    <input type="text" id="noteInput" placeholder="contoh: jajan pasar">
+
+    <div class="msg" id="formMsg"></div>
+
+    <div class="actions">
+      <button class="btn-in" id="addIn" type="button">+ Pemasukan</button>
+      <button class="btn-out" id="addOut" type="button">&#8722; Pengeluaran</button>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Grafik per hari</h2>
+    <div class="chart-wrap"><div id="chart"></div></div>
+    <div class="chart-legend">
+      <span><i class="dot in"></i>Pemasukan</span>
+      <span><i class="dot out"></i>Pengeluaran</span>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Riwayat</h2>
+    <div id="list"></div>
+  </section>
+</div>
+
+<div id="viewCalc" class="view">
+  <section class="card">
+    <h2>Kalkulator</h2>
+    <div class="calc-screen"><div class="calc-expr" id="calcExpr"></div><div class="calc-res" id="calcRes">0</div></div>
+    <div class="calc-grid" id="calcGrid"></div>
+  </section>
+</div>
+
+<div id="viewNotes" class="view">
+  <section class="card">
+    <h2>Catatan</h2>
+    <textarea class="note-input" id="noteText" placeholder="Tulis catatan..."></textarea>
+    <button type="button" class="btn-note" id="noteAdd">Simpan catatan</button>
+    <div id="noteList" style="margin-top:14px"></div>
+  </section>
+</div>
+</div>
+
+<script>
+(function(){
+  'use strict';
+
+  var DENOMS = [1,2,5,10,20,50,100];
+  var STORAGE_KEY = 'buku-kas-harian:entries:v2';
+  var entries = [];
+  var tally = 0;
+  var storageOK = true;
+
+  function loadEntries(){
+    try{
+      var raw = window.localStorage.getItem(STORAGE_KEY);
+      entries = raw ? JSON.parse(raw) : [];
+      if (!Array.isArray(entries)) entries = [];
+    }catch(e){
+      entries = [];
+      storageOK = false;
+    }
+  }
+
+  function saveEntries(){
+    try{
+      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(entries));
+    }catch(e){
+      storageOK = false;
+    }
+  }
+
+  function formatRp(n){
+    var sign = n < 0 ? '-' : '';
+    return sign + 'Rp' + Math.abs(Math.round(n)).toLocaleString('id-ID');
+  }
+
+  function showMsg(text){
+    var el = document.getElementById('formMsg');
+    el.textContent = text || '';
+  }
+
+  function renderTally(){
+    document.getElementById('tally').textContent = formatRp(tally);
+  }
+
+  function currentAmount(){
+    var customEl = document.getElementById('customAmount');
+    var customVal = customEl.value.trim();
+    if (customVal !== ''){
+      var n = parseFloat(customVal);
+      if (!isNaN(n) && n > 0) return n;
+      return 0;
+    }
+    return tally;
+  }
+
+  function addEntry(type){
+    var amount = currentAmount();
+    if (!amount || amount <= 0){
+      showMsg('Masukkan nominal dulu \u2014 klik koin atau ketik angka sebelum menyimpan.');
+      return;
+    }
+    var noteEl = document.getElementById('noteInput');
+    var note = noteEl.value.trim();
+    var now = new Date();
+
+    entries.unshift({
+      id: now.getTime() + '-' + Math.random().toString(36).slice(2,7),
+      type: type,
+      amount: amount,
+      note: note,
+      dateISO: now.toISOString().slice(0,10),
+      timeDisplay: now.toLocaleString('id-ID', {day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})
+    });
+
+    saveEntries();
+
+    tally = 0;
+    document.getElementById('customAmount').value = '';
+    noteEl.value = '';
+    showMsg(storageOK ? '' : 'Tersimpan untuk sesi ini (penyimpanan browser tidak tersedia, jadi tidak bertahan setelah ditutup).');
+
+    renderTally();
+    renderAll();
+  }
+
+  function deleteEntry(id){
+    entries = entries.filter(function(e){ return e.id !== id; });
+    saveEntries();
+    renderAll();
+  }
+
+  function renderSummary(){
+    var inTotal = 0, outTotal = 0;
+    entries.forEach(function(e){
+      if (e.type === 'in') inTotal += e.amount; else outTotal += e.amount;
+    });
+    var balance = inTotal - outTotal;
+    var balEl = document.getElementById('balance');
+    balEl.textContent = formatRp(balance);
+    balEl.classList.toggle('negative', balance < 0);
+    document.getElementById('totalIn').textContent = formatRp(inTotal);
+    document.getElementById('totalOut').textContent = formatRp(outTotal);
+  }
+
+  function renderList(){
+    var list = document.getElementById('list');
+    list.innerHTML = '';
+    if (entries.length === 0){
+      var empty = document.createElement('div');
+      empty.className = 'empty';
+      empty.textContent = 'Belum ada catatan. Mulai hitung nominal di atas.';
+      list.appendChild(empty);
+      return;
+    }
+    entries.forEach(function(e){
+      var row = document.createElement('div');
+      row.className = 'row ' + e.type;
+
+      var mark = document.createElement('div');
+      mark.className = 'mark';
+
+      var info = document.createElement('div');
+      info.className = 'info';
+
+      var amt = document.createElement('div');
+      amt.className = 'amt';
+      amt.textContent = (e.type === 'in' ? '+ ' : '\u2212 ') + formatRp(e.amount);
+      info.appendChild(amt);
+
+      if (e.note){
+        var note = document.createElement('div');
+        note.className = 'note';
+        note.textContent = '"' + e.note + '"';
+        info.appendChild(note);
+      }
+
+      var time = document.createElement('div');
+      time.className = 'time';
+      time.textContent = e.timeDisplay || '';
+      info.appendChild(time);
+
+      var del = document.createElement('button');
+      del.className = 'del';
+      del.type = 'button';
+      del.setAttribute('aria-label', 'Hapus catatan');
+      del.textContent = '\u00d7';
+      del.addEventListener('click', function(){ deleteEntry(e.id); });
+
+      row.appendChild(mark);
+      row.appendChild(info);
+      row.appendChild(del);
+      list.appendChild(row);
+    });
+  }
+
+  function dayLabel(iso){
+    var d = new Date(iso + 'T00:00:00');
+    return d.toLocaleDateString('id-ID', {day:'numeric', month:'short'});
+  }
+
+  function renderChart(){
+    var chart = document.getElementById('chart');
+    chart.innerHTML = '';
+
+    if (entries.length === 0){
+      var empty = document.createElement('div');
+      empty.className = 'empty';
+      empty.textContent = 'Grafik akan muncul setelah ada catatan.';
+      chart.appendChild(empty);
+      return;
+    }
+
+    var byDay = {};
+    entries.forEach(function(e){
+      if (!byDay[e.dateISO]) byDay[e.dateISO] = {in:0, out:0};
+      byDay[e.dateISO][e.type] += e.amount;
+    });
+
+    var days = Object.keys(byDay).sort();
+    days = days.slice(-14);
+
+    var maxVal = 1;
+    days.forEach(function(d){
+      maxVal = Math.max(maxVal, byDay[d].in, byDay[d].out);
+    });
+
+    var barW = 22;
+    var gap = 18;
+    var groupW = barW * 2 + 6;
+    var colW = groupW + gap;
+    var halfH = 90;
+    var svgW = Math.max(days.length * colW + gap, 280);
+    var svgH = halfH * 2 + 40;
+
+    var svgNS = 'http://www.w3.org/2000/svg';
+    var svg = document.createElementNS(svgNS, 'svg');
+    svg.setAttribute('viewBox', '0 0 ' + svgW + ' ' + svgH);
+    svg.setAttribute('width', svgW);
+    svg.setAttribute('height', svgH);
+
+    var axis = document.createElementNS(svgNS, 'line');
+    axis.setAttribute('x1', 0);
+    axis.setAttribute('x2', svgW);
+    axis.setAttribute('y1', halfH);
+    axis.setAttribute('y2', halfH);
+    axis.setAttribute('stroke', 'var(--paper-line)');
+    axis.setAttribute('stroke-width', '1');
+    svg.appendChild(axis);
+
+    days.forEach(function(d, i){
+      var x0 = gap + i * colW;
+      var inVal = byDay[d].in;
+      var outVal = byDay[d].out;
+
+      var inH = (inVal / maxVal) * (halfH - 10);
+      var outH = (outVal / maxVal) * (halfH - 10);
+
+      var inRect = document.createElementNS(svgNS, 'rect');
+      inRect.setAttribute('x', x0);
+      inRect.setAttribute('y', halfH - inH);
+      inRect.setAttribute('width', barW);
+      inRect.setAttribute('height', inH);
+      inRect.setAttribute('rx', 2);
+      inRect.setAttribute('fill', 'var(--green)');
+      svg.appendChild(inRect);
+
+      var outRect = document.createElementNS(svgNS, 'rect');
+      outRect.setAttribute('x', x0 + barW + 6);
+      outRect.setAttribute('y', halfH);
+      outRect.setAttribute('width', barW);
+      outRect.setAttribute('height', outH);
+      outRect.setAttribute('rx', 2);
+      outRect.setAttribute('fill', 'var(--red)');
+      svg.appendChild(outRect);
+
+      var label = document.createElementNS(svgNS, 'text');
+      label.setAttribute('x', x0 + barW + 3);
+      label.setAttribute('y', halfH * 2 + 22);
+      label.setAttribute('text-anchor', 'middle');
+      label.setAttribute('font-size', '10');
+      label.setAttribute('fill', 'var(--ink-soft)');
+      label.textContent = dayLabel(d);
+      svg.appendChild(label);
+    });
+
+    chart.appendChild(svg);
+  }
+
+  function renderAll(){
+    renderSummary();
+    renderList();
+    renderChart();
+  }
+
+  /* ---------- menu garis tiga ---------- */
+  function setView(name){
+    ['home','calc','notes'].forEach(function(v){
+      document.getElementById('view'+v.charAt(0).toUpperCase()+v.slice(1)).classList.toggle('show', v===name);
+    });
+    document.querySelectorAll('.drawer-item').forEach(function(b){
+      b.classList.toggle('on', b.getAttribute('data-view')===name);
+    });
+    closeDrawer();
+    window.scrollTo(0,0);
+  }
+  function openDrawer(){
+    document.getElementById('drawer').classList.add('open');
+    document.getElementById('drawerOverlay').classList.remove('hidden');
+    requestAnimationFrame(function(){ document.getElementById('drawerOverlay').classList.add('show'); });
+  }
+  function closeDrawer(){
+    document.getElementById('drawer').classList.remove('open');
+    document.getElementById('drawerOverlay').classList.remove('show');
+    setTimeout(function(){ document.getElementById('drawerOverlay').classList.add('hidden'); }, 200);
+  }
+
+  /* ---------- catatan ---------- */
+  var NOTES_KEY = 'buku-kas-harian:notes:v1';
+  var notes = [];
+  function loadNotes(){
+    try{
+      var raw = window.localStorage.getItem(NOTES_KEY);
+      notes = raw ? JSON.parse(raw) : [];
+      if (!Array.isArray(notes)) notes = [];
+    }catch(e){ notes = []; }
+  }
+  function saveNotes(){
+    try{ window.localStorage.setItem(NOTES_KEY, JSON.stringify(notes)); }catch(e){}
+  }
+  function renderNotes(){
+    var box = document.getElementById('noteList');
+    box.innerHTML = '';
+    if (!notes.length){
+      var empty = document.createElement('div');
+      empty.className = 'empty';
+      empty.textContent = 'Belum ada catatan.';
+      box.appendChild(empty);
+      return;
+    }
+    notes.forEach(function(n){
+      var wrap = document.createElement('div');
+      wrap.className = 'note';
+      var t = document.createElement('div');
+      t.className = 't';
+      t.textContent = n.text;
+      var m = document.createElement('div');
+      m.className = 'm';
+      var d = document.createElement('span');
+      d.textContent = n.timeDisplay || '';
+      var del = document.createElement('button');
+      del.type = 'button';
+      del.textContent = 'Hapus';
+      del.addEventListener('click', function(){
+        notes = notes.filter(function(x){ return x.id !== n.id; });
+        saveNotes();
+        renderNotes();
+      });
+      m.appendChild(d);
+      m.appendChild(del);
+      wrap.appendChild(t);
+      wrap.appendChild(m);
+      box.appendChild(wrap);
+    });
+  }
+  function addNote(){
+    var ta = document.getElementById('noteText');
+    var txt = ta.value.trim();
+    if (!txt) return;
+    var now = new Date();
+    notes.unshift({
+      id: now.getTime() + '-' + Math.random().toString(36).slice(2,6),
+      text: txt,
+      timeDisplay: now.toLocaleString('id-ID', {day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'})
+    });
+    saveNotes();
+    ta.value = '';
+    renderNotes();
+  }
+
+  /* ---------- kalkulator ---------- */
+  var calcExpr = '', calcJustEval = false;
+  function calcEvaluate(s){
+    s = s.replace(/[+\u2212\u00D7\u00F7]+$/, '');
+    var t = s.match(/\d+\.?\d*|\.\d+|[+\u2212\u00D7\u00F7%]/g) || [];
+    var i = 0;
+    function post(){
+      var tok = t[i++];
+      if (tok === undefined || isNaN(parseFloat(tok))) throw new Error('syn');
+      var v = parseFloat(tok);
+      while (t[i] === '%'){ i++; v = v/100; }
+      return v;
+    }
+    function unary(){ if (t[i]==='\u2212'){ i++; return -unary(); } return post(); }
+    function term(){
+      var v = unary();
+      while (t[i]==='\u00D7' || t[i]==='\u00F7'){
+        var o = t[i++], r = unary();
+        if (o==='\u00F7'){ if (r===0) throw new Error('div0'); v = v/r; } else v = v*r;
+      }
+      return v;
+    }
+    function add(){
+      var v = term();
+      while (t[i]==='+' || t[i]==='\u2212'){
+        var o = t[i++], r = term();
+        v = (o==='+') ? v+r : v-r;
+      }
+      return v;
+    }
+    var out = add();
+    if (i < t.length) throw new Error('syn');
+    return out;
+  }
+  function calcRound(v){ return Math.round(v*1e10)/1e10; }
+  function calcFmt(v){ return calcRound(v).toLocaleString('id-ID', {maximumFractionDigits:10}); }
+  function calcRefresh(){
+    document.getElementById('calcExpr').textContent = calcExpr;
+    var resEl = document.getElementById('calcRes');
+    if (!calcExpr){ resEl.textContent = '0'; return; }
+    try{ resEl.textContent = calcFmt(calcEvaluate(calcExpr)); }
+    catch(e){ if (e.message === 'div0') resEl.textContent = 'Tidak bisa \u00F7 0'; }
+  }
+  function calcIsOp(c){ return c !== '' && '+\u2212\u00D7\u00F7'.indexOf(c) > -1; }
+  function calcPress(k){
+    var last = calcExpr.charAt(calcExpr.length-1);
+    if (k === 'C'){ calcExpr=''; calcJustEval=false; calcRefresh(); return; }
+    if (k === '\u232B'){
+      if (calcJustEval){ calcExpr=''; calcJustEval=false; } else calcExpr = calcExpr.slice(0,-1);
+      calcRefresh(); return;
+    }
+    if (k === '='){
+      if (!calcExpr) return;
+      try{
+        var v = calcEvaluate(calcExpr), old = calcExpr;
+        calcExpr = String(calcRound(v)).replace('-','\u2212');
+        calcJustEval = true;
+        document.getElementById('calcExpr').textContent = old + ' =';
+        document.getElementById('calcRes').textContent = calcFmt(v);
+      }catch(e){
+        document.getElementById('calcRes').textContent = (e.message==='div0') ? 'Tidak bisa \u00F7 0' : 'Format salah';
+      }
+      return;
+    }
+    if (k === '00' || /^[0-9.]$/.test(k)){
+      if (calcJustEval){ calcExpr=''; calcJustEval=false; last=''; }
+      if (last === '%') return;
+      var seg = calcExpr.split(/[+\u2212\u00D7\u00F7]/).pop();
+      if (k === '.'){ if (seg.indexOf('.')>-1) return; if (seg==='') k='0.'; }
+      else if (seg === '0'){ calcExpr = calcExpr.slice(0,-1); if (k==='00') k='0'; }
+      else if (k === '00' && seg===''){ k='0'; }
+      calcExpr += k; calcRefresh(); return;
+    }
+    if (k === '%'){ calcJustEval=false; if (/[0-9%]$/.test(calcExpr)) calcExpr += '%'; calcRefresh(); return; }
+    calcJustEval = false;
+    if (calcExpr === ''){ if (k==='\u2212') calcExpr='\u2212'; calcRefresh(); return; }
+    if (calcExpr === '\u2212') return;
+    if (calcIsOp(last)){
+      if (k==='\u2212' && (last==='\u00D7'||last==='\u00F7')) calcExpr += k;
+      else calcExpr = calcExpr.replace(/[+\u2212\u00D7\u00F7]+$/, '') + k;
+    } else calcExpr += k;
+    calcRefresh();
+  }
+
+  function init(){
+    var coinGrid = document.getElementById('coinGrid');
+    DENOMS.forEach(function(d){
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'coin';
+      b.textContent = d;
+      b.addEventListener('click', function(){
+        tally += d;
+        showMsg('');
+        renderTally();
+      });
+      coinGrid.appendChild(b);
+    });
+
+    document.getElementById('clearTally').addEventListener('click', function(){
+      tally = 0;
+      document.getElementById('customAmount').value = '';
+      renderTally();
+    });
+
+    document.getElementById('addIn').addEventListener('click', function(){ addEntry('in'); });
+    document.getElementById('addOut').addEventListener('click', function(){ addEntry('out'); });
+
+    document.getElementById('customAmount').addEventListener('input', function(){ showMsg(''); });
+
+    document.getElementById('hamBtn').addEventListener('click', openDrawer);
+    document.getElementById('drawerOverlay').addEventListener('click', closeDrawer);
+    document.querySelectorAll('.drawer-item').forEach(function(b){
+      b.addEventListener('click', function(){ setView(b.getAttribute('data-view')); });
+    });
+
+    document.getElementById('noteAdd').addEventListener('click', addNote);
+
+    var calcKeys = [['C','fn'],['\u232B','fn'],['%','fn'],['\u00F7','op'],
+      ['7',''],['8',''],['9',''],['\u00D7','op'],
+      ['4',''],['5',''],['6',''],['\u2212','op'],
+      ['1',''],['2',''],['3',''],['+','op'],
+      ['0',''],['.',''],['00',''],['=','eq']];
+    var calcGrid = document.getElementById('calcGrid');
+    calcKeys.forEach(function(k){
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.className = k[1];
+      b.textContent = k[0];
+      b.addEventListener('click', function(){ calcPress(k[0]); });
+      calcGrid.appendChild(b);
+    });
+
+    loadEntries();
+    loadNotes();
+    renderTally();
+    renderAll();
+    renderNotes();
+  }
+
+  if (document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+})();
+</script>
+</body>
+</html>
